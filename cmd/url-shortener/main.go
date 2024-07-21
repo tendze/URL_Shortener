@@ -2,6 +2,7 @@ package main
 
 import (
 	"Rest1/internal/config"
+	"Rest1/internal/http-server/handlers/redirect"
 	"Rest1/internal/http-server/handlers/url/save"
 	"Rest1/internal/http-server/middleware/logger"
 	"Rest1/internal/lib/logger/handlers/slogpretty"
@@ -25,7 +26,10 @@ func main() {
 
 	log := setupLogger(cfg.Env)
 
-	log.Info("starting url-shortener server...", slog.String("env", cfg.Env))
+	log.Info(
+		"starting url-shortener server...",
+		slog.String("env", cfg.Env),
+	)
 	log.Debug("debug message enabled")
 
 	storage, err := sqlite.New(cfg.StoragePath)
@@ -41,6 +45,7 @@ func main() {
 	router.Use(middleware.Recoverer, middleware.URLFormat)
 
 	router.Post("/url", save.New(log, storage))
+	router.Get("/{alias}", redirect.New(log, storage))
 
 	log.Info("starting server...", slog.String("address", cfg.Address))
 	server := &http.Server{
