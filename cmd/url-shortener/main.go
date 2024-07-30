@@ -3,6 +3,7 @@ package main
 import (
 	"Rest1/internal/config"
 	"Rest1/internal/http-server/handlers/redirect"
+	"Rest1/internal/http-server/handlers/url/delete"
 	"Rest1/internal/http-server/handlers/url/save"
 	"Rest1/internal/http-server/middleware/logger"
 	"Rest1/internal/lib/logger/handlers/slogpretty"
@@ -46,6 +47,7 @@ func main() {
 
 	router.Post("/url", save.New(log, storage))
 	router.Get("/{alias}", redirect.New(log, storage))
+	router.Delete("/{alias}", delete.New(log, storage))
 
 	log.Info("starting server...", slog.String("address", cfg.Address))
 	server := &http.Server{
