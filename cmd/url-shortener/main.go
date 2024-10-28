@@ -3,7 +3,7 @@ package main
 import (
 	"Rest1/internal/config"
 	"Rest1/internal/http-server/handlers/redirect"
-	"Rest1/internal/http-server/handlers/url/delete"
+	delete2 "Rest1/internal/http-server/handlers/url/delete"
 	"Rest1/internal/http-server/handlers/url/save"
 	"Rest1/internal/http-server/middleware/logger"
 	"Rest1/internal/lib/logger/handlers/slogpretty"
@@ -44,10 +44,16 @@ func main() {
 	router := chi.NewRouter()
 	router.Use(middleware.RequestID, middleware.Logger, logger.New(log))
 	router.Use(middleware.Recoverer, middleware.URLFormat)
+	router.Route("/url", func(r chi.Router) {
+		r.Use(middleware.BasicAuth("url-shortener", map[string]string{
+			cfg.HTTPServer.User: cfg.HTTPServer.Password,
+		}))
 
-	router.Post("/url", save.New(log, storage))
+		r.Post("/", save.New(log, storage))
+		r.Delete("/{alias}", delete2.New(log, storage))
+	})
+
 	router.Get("/{alias}", redirect.New(log, storage))
-	router.Delete("/{alias}", delete.New(log, storage))
 
 	log.Info("starting server...", slog.String("address", cfg.Address))
 	server := &http.Server{
@@ -58,7 +64,7 @@ func main() {
 		IdleTimeout:  cfg.HTTPServer.IdleTimeout,
 	}
 
-	if err := server.ListenAndServe(); err != nil {
+	if err = server.ListenAndServe(); err != nil {
 		log.Error("failed to start server")
 	}
 	log.Error("server stopped")
